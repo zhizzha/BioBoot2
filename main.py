@@ -4,8 +4,6 @@ from Bio.SubsMat import FreqTable
 import argparse as ap
 import sys,os
 from defs import *
-from classes import Frame
-#TODO Посчитать консервативность каждого учатска
 #TODO (Сит) Провести анализ BLAST
 #TODO Красиво оформить :> (GUI)
 segments = ""
@@ -16,6 +14,7 @@ segments = ""
 def createParser ():
     parser = ap.ArgumentParser()
     parser.add_argument ('-f', '--file', default='aln.fasta', help='File name .fasta')
+    parser.add_argument ('-t', '--treeshold', default='0.98', help='Conservation threeshold')
     return parser
 
 
@@ -53,23 +52,28 @@ if __name__ == '__main__':
     for file in files:
         aln = AlignIO.read(file,"fasta")
         summary_align = AlignInfo.SummaryInfo(aln)
-        summary_align1 = AlignInfo.SummaryInfo(aln)
-        for i in range(20,21):
-            consensus = summary_align.dumb_consensus()
-            c = 0
-            for j in range(0,len(consensus) - i):
-                frame = consensus[j:j+i]
-                if not("X" in frame):
-                    expect_freq = FreqTable.FreqTable({"a": 0.25, "g": 0.25, "t": 0.25, "c": 0.25},FreqTable.FREQ)
-                    info_content = summary_align.information_content(
-                        j, j+i, e_freq_table=expect_freq, chars_to_ignore=["N","X","y","r"]
-                    )
-                    if info_content/i >= 2:
-                        #print('Seq : {0} Score: {1}'.format(frame,info_content/i))
-                        print(frame)
-                        seqs.append(frame)
-                        c +=1
-            print("Count for {0} in {1}: {2}".format(file,i,c))
-    print(len(seqs))
-    seqs = list(set(seqs))
-    print(len(seqs))
+        consensus = summary_align.dumb_consensus()
+        pssm = summary_align.pos_specific_score_matrix(consensus, chars_to_ignore=["N"])
+        max = len(summary_align.get_column(0))
+        cons = []
+        th = float(namespace.treeshold)
+        for pos in range(aln.get_alignment_length()):
+            max_percent = 0
+            for letter in pssm[pos].keys():
+                percent = pssm[pos][letter]/max
+                if percent > max_percent:
+                    max_percent = percent
+                    l = letter
+            if max_percent > th:
+                cons.append(l)
+            else:
+                cons.append("N")
+        cv_cons = ''.join(cons)
+        arr = cv_cons.split("N")
+        c = 0
+        for i in range(len(arr)):
+            if len(arr[i]) > 27:
+                c +=1
+                seqs.append((len(arr[i]),arr[i]))
+
+    [print(i) for i in seqs]
