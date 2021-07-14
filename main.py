@@ -4,8 +4,6 @@ from Bio.SubsMat import FreqTable
 import argparse as ap
 import sys,os
 from defs import *
-#TODO (Сит) Провести анализ BLAST
-#TODO Красиво оформить :> (GUI)
 segments = ""
 
 
@@ -36,7 +34,7 @@ if __name__ == '__main__':
             print("Records count: {}\n".format(len(records)))
             SeqIO.write(records,segment+'.fasta','fasta')
     """
-    #alaignment
+    #alignment
     files = [i + '.fasta' for i in segments]
     print("List of files to align: \n{}\n".format(' | '.join(files)))
 
